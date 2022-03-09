@@ -36,8 +36,12 @@ export function signupRoutes(mongodbClient: MongoClient) {
     }
 
     router.post('/signup', async (req: Request, res: Response) => {
-        const plaintextPassword: string = String(req.body.password)
-        const phoneNumber: string = String(req.body.phoneNumber)
+        const plaintextPassword = req.body.password
+        const phoneNumber = req.body.phoneNumber
+
+        if (plaintextPassword == undefined || phoneNumber == undefined) {
+            return res.status(400).send("password and phoneNumber in body")
+        }
 
         // validate phone number, make sure it doesn't already exist, is valid format
 

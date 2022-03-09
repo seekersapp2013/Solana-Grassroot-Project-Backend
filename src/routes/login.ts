@@ -10,10 +10,12 @@ export function loginRoutes(mongodbClient: MongoClient) {
 
     // checks login request with database to see if phone number and password match
     router.post('/login', (req: Request, res: Response) => {
-        const plaintextPassword: string = String(req.body.password)
-        const phoneNumber: string = String(req.body.phoneNumber)
-        console.log(req)
-        console.log(phoneNumber)
+        const plaintextPassword = req.body.password
+        const phoneNumber = req.body.phoneNumber
+
+        if (plaintextPassword == undefined || phoneNumber == undefined) {
+            return res.status(400).send("password and phoneNumber in body")
+        }
 
         // TODO: validate phone number and password are valid
         const query = { "phoneNumber" : phoneNumber}

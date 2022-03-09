@@ -44,8 +44,11 @@ function signupRoutes(mongodbClient) {
         });
     }
     router.post('/signup', (req, res) => __awaiter(this, void 0, void 0, function* () {
-        const plaintextPassword = String(req.body.password);
-        const phoneNumber = String(req.body.phoneNumber);
+        const plaintextPassword = req.body.password;
+        const phoneNumber = req.body.phoneNumber;
+        if (plaintextPassword == undefined || phoneNumber == undefined) {
+            return res.status(400).send("password and phoneNumber in body");
+        }
         // validate phone number, make sure it doesn't already exist, is valid format
         // make sure phone number doesn't already exist in database
         const query = { "phoneNumber": phoneNumber };

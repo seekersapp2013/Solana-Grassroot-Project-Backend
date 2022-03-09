@@ -12,10 +12,11 @@ function loginRoutes(mongodbClient) {
     const users = database.collection('user');
     // checks login request with database to see if phone number and password match
     router.post('/login', (req, res) => {
-        const plaintextPassword = String(req.body.password);
-        const phoneNumber = String(req.body.phoneNumber);
-        console.log(req);
-        console.log(phoneNumber);
+        const plaintextPassword = req.body.password;
+        const phoneNumber = req.body.phoneNumber;
+        if (plaintextPassword == undefined || phoneNumber == undefined) {
+            return res.status(400).send("password and phoneNumber in body");
+        }
         // TODO: validate phone number and password are valid
         const query = { "phoneNumber": phoneNumber };
         const result = users.findOne(query)
