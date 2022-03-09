@@ -73,7 +73,14 @@ export function signupRoutes(mongodbClient: MongoClient) {
                     }
                 })
                 // store OPT ref id and hashed password and phone number
-                .then(res => processSendOPTResponse(res, phoneNumber, hash))
+                .then(optRes => {
+                    const status = optRes.data["entity"][0]["status"]
+                    const message = optRes.data["entity"][0]["message"]
+                    if (status === 400) {
+                        return res.status(400).send("unable to create OPT: " + message)
+                    }
+                    processSendOPTResponse(optRes, phoneNumber, hash);
+                })
                 .catch(err => console.log(err))
                 .then(optRefId => res.send(optRefId))
                 
