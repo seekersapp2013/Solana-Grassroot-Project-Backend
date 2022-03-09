@@ -9,7 +9,7 @@ export function validatePasswordResetOTPRoutes(mongodbClient: MongoClient) {
 
     const database: Db = mongodbClient.db('accounts');
     const refIds: Collection = database.collection('refId');
-    // const users: Collection = database.collection('user');
+    const users: Collection = database.collection('user');
 
     const validateOTPEndpoint: string = "https://api.dojah.io/api/v1/messaging/otp/validate";
 
@@ -58,7 +58,7 @@ export function validatePasswordResetOTPRoutes(mongodbClient: MongoClient) {
                     "Authorization" : DOJAH_API_PRIVATE_KEY
                 }
             })
-            .then(res => processValidateOTPResponse(res, optRefId))
+            .then(res => processValidateOPTResponse(res, optRefId))
             .catch(err => res.status(400).send("Invalid opt"))
             .then(isValid => res.send("OPT was " + String(isValid)))
     })

@@ -12,11 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateOPTRoutes = void 0;
+exports.validatePasswordResetOTPRoutes = void 0;
 const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
 const app_1 = require("../app");
-function validateOPTRoutes(mongodbClient) {
+function validatePasswordResetOTPRoutes(mongodbClient) {
     const router = express_1.default.Router();
     const database = mongodbClient.db('accounts');
     const refIds = database.collection('refId');
@@ -39,7 +39,7 @@ function validateOPTRoutes(mongodbClient) {
                     users.insertOne(user);
                 }
                 else {
-                    console.log("Error: refId not found in database, opt may have expired");
+                    console.log("Error: opt was validated for request that was not processed by us");
                     return false;
                 }
             }
@@ -48,11 +48,12 @@ function validateOPTRoutes(mongodbClient) {
     }
     // TODO: Make sure user also has right token
     // Once OPT is validated, the account is created
-    router.post('/validateOPT', (req, res) => {
+    router.post('/reset-password/validate-otp', (req, res) => {
         const optRefId = req.body.optRefId;
         const code = req.body.code;
         if (code == undefined || optRefId == undefined) {
-            return res.status(400).send("expecting code and optRefId in body");
+            res.status(400).send("expecting code and optRefId in body");
+            return;
         }
         // validate OPT
         const queryParams = `?code=${code}&reference_id=${optRefId}`;
@@ -69,4 +70,4 @@ function validateOPTRoutes(mongodbClient) {
     });
     return router;
 }
-exports.validateOPTRoutes = validateOPTRoutes;
+exports.validatePasswordResetOTPRoutes = validatePasswordResetOTPRoutes;

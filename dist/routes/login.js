@@ -11,18 +11,16 @@ function loginRoutes(mongodbClient) {
     const database = mongodbClient.db('accounts');
     const users = database.collection('user');
     // checks login request with database to see if phone number and password match
-    router.get('/login', (req, res) => {
-        const plaintextPassword = String(req.query.password);
-        const phoneNumber = String(req.query.phoneNumber);
-        console.log(plaintextPassword);
+    router.post('/login', (req, res) => {
+        const plaintextPassword = String(req.body.password);
+        const phoneNumber = String(req.body.phoneNumber);
+        console.log(req);
         console.log(phoneNumber);
         // TODO: validate phone number and password are valid
         const query = { "phoneNumber": phoneNumber };
         const result = users.findOne(query)
             .then(user => {
             if (user) {
-                console.log(plaintextPassword);
-                console.log(user.password);
                 return bcrypt_1.default.compareSync(plaintextPassword, user.password);
             }
             else {

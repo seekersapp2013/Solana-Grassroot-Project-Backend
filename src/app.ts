@@ -40,7 +40,10 @@ function loadEnvVariables() {
 }
 
 async function run() {
-    await mongoClient.connect();
+    await mongoClient.connect().catch(err => {
+        console.log(err);
+        exit()
+    });
     console.log(`connected to mongodb: ${mongodbEndpoint}`)
     // parse requests json payloads
     app.use(express.json())

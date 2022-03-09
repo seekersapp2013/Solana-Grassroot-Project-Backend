@@ -66,7 +66,10 @@ function loadEnvVariables() {
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield mongoClient.connect();
+        yield mongoClient.connect().catch(err => {
+            console.log(err);
+            (0, process_1.exit)();
+        });
         console.log(`connected to mongodb: ${mongodbEndpoint}`);
         // parse requests json payloads
         app.use(express_1.default.json());

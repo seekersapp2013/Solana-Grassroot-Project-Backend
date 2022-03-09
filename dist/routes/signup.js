@@ -21,6 +21,7 @@ function signupRoutes(mongodbClient) {
     const router = express_1.default.Router();
     const database = mongodbClient.db('accounts');
     const refIds = database.collection('refId');
+    const users = database.collection('user');
     const sendOptEndpoint = "https://api.dojah.io/api/v1/messaging/otp";
     // see sms messages sent here: https://www.receivesms.co/us-phone-number/3471/
     const testPhoneNumber = "12099216581";
@@ -34,20 +35,24 @@ function signupRoutes(mongodbClient) {
             const doc = {
                 "phoneNumber": phoneNumber,
                 "optRefId": optRefId,
-                "password": hash
+                "password": hash,
+                "createdAt": new Date()
             };
             const result = yield refIds.insertOne(doc);
             console.log(`A document was inserted into refIds with the _id: ${result.insertedId} and optRefId: ${optRefId}`);
             return optRefId;
         });
     }
-    router.post('/signup', (req, res) => {
-        const plaintextPassword = req.body.password;
-        const phoneNumber = req.body.phoneNumber;
+    router.post('/signup', (req, res) => __awaiter(this, void 0, void 0, function* () {
+        const plaintextPassword = String(req.body.password);
+        const phoneNumber = String(req.body.phoneNumber);
         // validate phone number, make sure it doesn't already exist, is valid format
-        // if (phoneNumber !== testPhoneNumber) {
-        //     return res.status(400).send("Phone number is not equal to test phone number")
-        // }
+        // make sure phone number doesn't already exist in database
+        const query = { "phoneNumber": phoneNumber };
+        const user = yield users.findOne(query);
+        if (user) {
+            return res.status(400).send("Account exists for phone number");
+        }
         // TODO: validate password
         // create salt and hash
         bcrypt_1.default.hash(plaintextPassword, 10, function (err, hash) {
@@ -73,7 +78,7 @@ function signupRoutes(mongodbClient) {
                 .catch(err => console.log(err))
                 .then(optRefId => res.send(optRefId));
         });
-    });
+    }));
     return router;
 }
 exports.signupRoutes = signupRoutes;
