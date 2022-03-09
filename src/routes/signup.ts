@@ -10,6 +10,8 @@ export function signupRoutes(mongodbClient: MongoClient) {
 
     const database: Db = mongodbClient.db('accounts');
     const refIds: Collection = database.collection('refId');
+    const users: Collection = database.collection('user');
+
     const sendOptEndpoint: string = "https://api.dojah.io/api/v1/messaging/otp";
 
     // see sms messages sent here: https://www.receivesms.co/us-phone-number/3471/
@@ -25,21 +27,26 @@ export function signupRoutes(mongodbClient: MongoClient) {
         const doc = {
             "phoneNumber": phoneNumber,
             "optRefId": optRefId,
-            "password": hash
+            "password": hash,
+            "createdAt": new Date()
         }
         const result = await refIds.insertOne(doc);
         console.log(`A document was inserted into refIds with the _id: ${result.insertedId} and optRefId: ${optRefId}`);
         return optRefId
     }
 
-    router.post('/signup', (req: Request, res: Response) => {
-        const plaintextPassword = req.body.password
-        const phoneNumber = req.body.phoneNumber
+    router.post('/signup', async (req: Request, res: Response) => {
+        const plaintextPassword: string = String(req.body.password)
+        const phoneNumber: string = String(req.body.phoneNumber)
 
         // validate phone number, make sure it doesn't already exist, is valid format
-        // if (phoneNumber !== testPhoneNumber) {
-        //     return res.status(400).send("Phone number is not equal to test phone number")
-        // }
+
+        // make sure phone number doesn't already exist in database
+        const query = { "phoneNumber": phoneNumber }
+        const user = await users.findOne(query)
+        if (user) {
+            return res.status(400).send("Account exists for phone number")
+        }
 
         // TODO: validate password
 

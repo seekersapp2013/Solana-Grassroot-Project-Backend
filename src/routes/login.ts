@@ -9,10 +9,10 @@ export function loginRoutes(mongodbClient: MongoClient) {
     const users: Collection = database.collection('user');
 
     // checks login request with database to see if phone number and password match
-    router.get('/login', (req: Request, res: Response) => {
-        const plaintextPassword: string = String(req.query.password)
-        const phoneNumber: string = String(req.query.phoneNumber)
-        console.log(plaintextPassword)
+    router.post('/login', (req: Request, res: Response) => {
+        const plaintextPassword: string = String(req.body.password)
+        const phoneNumber: string = String(req.body.phoneNumber)
+        console.log(req)
         console.log(phoneNumber)
 
         // TODO: validate phone number and password are valid
@@ -20,8 +20,6 @@ export function loginRoutes(mongodbClient: MongoClient) {
         const result = users.findOne(query)
             .then(user => {
                 if (user) {
-                    console.log(plaintextPassword)
-                    console.log(user.password)
                     return bcrypt.compareSync(plaintextPassword, user.password)
                 } else {
                     // user not found

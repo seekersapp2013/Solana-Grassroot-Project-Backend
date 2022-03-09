@@ -29,7 +29,7 @@ export function validateOPTRoutes(mongodbClient: MongoClient) {
                 
                 users.insertOne(user)
             } else {
-                console.log("Error: opt was validated for request that was not processed by us")
+                console.log("Error: refId not found in database, opt may have expired")
                 return false
             }
         }
@@ -43,8 +43,7 @@ export function validateOPTRoutes(mongodbClient: MongoClient) {
         const code = req.body.code
     
         if (code == undefined || optRefId == undefined) {
-            res.status(400).send("expecting code and optRefId in body")
-            return
+            return res.status(400).send("expecting code and optRefId in body")
         }
     
         // validate OPT
