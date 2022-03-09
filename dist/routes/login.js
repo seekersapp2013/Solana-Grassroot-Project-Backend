@@ -15,7 +15,7 @@ function loginRoutes(mongodbClient) {
         const plaintextPassword = req.body.password;
         const phoneNumber = req.body.phoneNumber;
         if (plaintextPassword == undefined || phoneNumber == undefined) {
-            return res.status(400).send("password and phoneNumber in body");
+            return res.status(400).send("expecting password and phoneNumber in body");
         }
         // TODO: validate phone number and password are valid
         const query = { "phoneNumber": phoneNumber };

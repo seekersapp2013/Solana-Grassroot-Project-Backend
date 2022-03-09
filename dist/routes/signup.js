@@ -47,7 +47,7 @@ function signupRoutes(mongodbClient) {
         const plaintextPassword = req.body.password;
         const phoneNumber = req.body.phoneNumber;
         if (plaintextPassword == undefined || phoneNumber == undefined) {
-            return res.status(400).send("password and phoneNumber in body");
+            return res.status(400).send("expecting password and phoneNumber in body");
         }
         // validate phone number, make sure it doesn't already exist, is valid format
         // make sure phone number doesn't already exist in database
