@@ -17,30 +17,19 @@ const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
 const app_1 = require("../app");
 const ErrorHandler_1 = require("../components/ErrorHandler");
+const validateRequestInput_1 = require("../components/validateRequestInput");
 function passwordResetRoutes(mongodbClient) {
     const router = express_1.default.Router();
     const database = mongodbClient.db("accounts");
     const refIds = database.collection("refId");
     const sendOptEndpoint = "https://api.dojah.io/api/v1/messaging/otp";
-    // updates the refId collection to store the phone number and the associated reference id
-    // If this phone number already exists, it updates it instead
-    function processSendOPTResponse(res, phoneNumber) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const optRefId = res.data["entity"][0]["reference_id"];
-            // TODO: handle condition where document with phone number already exists (race condition with more than 1 people registering the same phone number)
-            // store the account, refId, password and salt
-            const doc = {
-                phoneNumber: phoneNumber,
-                optRefId: optRefId,
-                // "password": hash
-            };
-            const result = yield refIds.insertOne(doc);
-            console.log(`A document was inserted into refIds with the _id: ${result.insertedId} and optRefId: ${optRefId}`);
-            return optRefId;
-        });
-    }
     router.post("/reset-password", (req, res) => {
         const phoneNumber = req.body.phoneNumber;
+        const expectedParameters = [["phoneNumber", phoneNumber]];
+        const error = (0, validateRequestInput_1.validateRequestInput)(res, expectedParameters);
+        if (error) {
+            return error.send();
+        }
         // validate phone number, make sure it is given in the request, and is valid.
         if (!phoneNumber) {
             let error = new ErrorHandler_1.ErrorHandler(res);
@@ -68,6 +57,23 @@ function passwordResetRoutes(mongodbClient) {
             .catch((err) => console.log(err))
             .then((optRefId) => res.send(optRefId));
     });
+    // updates the refId collection to store the phone number and the associated reference id
+    // If this phone number already exists, it updates it instead
+    function processSendOPTResponse(res, phoneNumber) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const optRefId = res.data["entity"][0]["reference_id"];
+            // TODO: handle condition where document with phone number already exists (race condition with more than 1 people registering the same phone number)
+            // store the account, refId, password and salt
+            const doc = {
+                phoneNumber: phoneNumber,
+                optRefId: optRefId,
+                // "password": hash
+            };
+            const result = yield refIds.insertOne(doc);
+            console.log(`A document was inserted into refIds with the _id: ${result.insertedId} and optRefId: ${optRefId}`);
+            return optRefId;
+        });
+    }
     return router;
 }
 exports.passwordResetRoutes = passwordResetRoutes;

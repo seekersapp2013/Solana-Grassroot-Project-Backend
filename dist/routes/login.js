@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.loginRoutes = void 0;
 const express_1 = __importDefault(require("express"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const validateRequestInput_1 = require("../components/validateRequestInput");
 function loginRoutes(mongodbClient) {
     const router = express_1.default.Router();
     const database = mongodbClient.db('accounts');
@@ -14,8 +15,10 @@ function loginRoutes(mongodbClient) {
     router.post('/login', (req, res) => {
         const plaintextPassword = req.body.password;
         const phoneNumber = req.body.phoneNumber;
-        if (plaintextPassword == undefined || phoneNumber == undefined) {
-            return res.status(400).send("expecting password and phoneNumber in body");
+        const expectedParameters = [["phoneNumber", phoneNumber], ["password", plaintextPassword]];
+        const error = (0, validateRequestInput_1.validateRequestInput)(res, expectedParameters);
+        if (error) {
+            return error.send();
         }
         // TODO: validate phone number and password are valid
         const query = { "phoneNumber": phoneNumber };

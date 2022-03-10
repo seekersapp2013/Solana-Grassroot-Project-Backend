@@ -17,6 +17,9 @@ class ErrorHandler {
     addInputError(parameter, message) {
         this.details.push({ parameter, message });
     }
+    getInputErrorsLength() {
+        return this.details.length;
+    }
     get data() {
         return {
             status: false,

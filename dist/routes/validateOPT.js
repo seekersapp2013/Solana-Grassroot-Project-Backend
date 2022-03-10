@@ -16,12 +16,36 @@ exports.validateOPTRoutes = void 0;
 const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
 const app_1 = require("../app");
+const validateRequestInput_1 = require("../components/validateRequestInput");
 function validateOPTRoutes(mongodbClient) {
     const router = express_1.default.Router();
     const database = mongodbClient.db('accounts');
     const refIds = database.collection('refId');
     const users = database.collection('user');
     const validateOTPEndpoint = "https://api.dojah.io/api/v1/messaging/otp/validate";
+    // TODO: Make sure user also has right token
+    // Once OPT is validated, the account is created
+    router.post('/validateOPT', (req, res) => {
+        const optRefId = req.body.optRefId;
+        const code = req.body.code;
+        const expectedParameters = [["code", code], ["optRefId", optRefId]];
+        const error = (0, validateRequestInput_1.validateRequestInput)(res, expectedParameters);
+        if (error) {
+            return error.send();
+        }
+        // validate OPT
+        const queryParams = `?code=${code}&reference_id=${optRefId}`;
+        axios_1.default.get(validateOTPEndpoint + queryParams, {
+            headers: {
+                "Accept": "text/plain",
+                "AppId": app_1.DOJAH_APP_ID,
+                "Authorization": app_1.DOJAH_API_PRIVATE_KEY
+            }
+        })
+            .then(res => processValidateOPTResponse(res, optRefId))
+            .catch(err => res.status(400).send("Invalid opt"))
+            .then(isValid => res.send("OPT was " + String(isValid)));
+    });
     function processValidateOPTResponse(res, optRefId) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log(res.data["entity"]["valid"]);
@@ -46,27 +70,6 @@ function validateOPTRoutes(mongodbClient) {
             return isValid;
         });
     }
-    // TODO: Make sure user also has right token
-    // Once OPT is validated, the account is created
-    router.post('/validateOPT', (req, res) => {
-        const optRefId = req.body.optRefId;
-        const code = req.body.code;
-        if (code == undefined || optRefId == undefined) {
-            return res.status(400).send("expecting code and optRefId in body");
-        }
-        // validate OPT
-        const queryParams = `?code=${code}&reference_id=${optRefId}`;
-        axios_1.default.get(validateOTPEndpoint + queryParams, {
-            headers: {
-                "Accept": "text/plain",
-                "AppId": app_1.DOJAH_APP_ID,
-                "Authorization": app_1.DOJAH_API_PRIVATE_KEY
-            }
-        })
-            .then(res => processValidateOPTResponse(res, optRefId))
-            .catch(err => res.status(400).send("Invalid opt"))
-            .then(isValid => res.send("OPT was " + String(isValid)));
-    });
     return router;
 }
 exports.validateOPTRoutes = validateOPTRoutes;

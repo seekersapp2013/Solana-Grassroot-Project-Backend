@@ -2,6 +2,10 @@ import express, { Request, Response } from "express";
 import axios, { AxiosResponse } from 'axios';
 import { Collection, Db, MongoClient } from 'mongodb';
 import { DOJAH_API_PRIVATE_KEY, DOJAH_APP_ID} from '../app'
+import { ErrorHandler } from "../components/ErrorHandler";
+import { validateRequestInput } from '../components/validateRequestInput'
+
+
 
 export function validateOPTRoutes(mongodbClient: MongoClient) {
 
@@ -12,6 +16,35 @@ export function validateOPTRoutes(mongodbClient: MongoClient) {
     const users: Collection = database.collection('user');
 
     const validateOTPEndpoint: string = "https://api.dojah.io/api/v1/messaging/otp/validate";
+
+    // TODO: Make sure user also has right token
+    // Once OPT is validated, the account is created
+    router.post('/validateOPT', (req: Request, res: Response) => {
+
+        const optRefId = req.body.optRefId
+        const code = req.body.code
+        const expectedParameters: Array<[string, string]> = [["code", code], ["optRefId", optRefId]]
+
+        const error: ErrorHandler | undefined = validateRequestInput(res, expectedParameters)
+        if (error) {
+            return error.send()
+        }
+    
+        // validate OPT
+        const queryParams = `?code=${code}&reference_id=${optRefId}`
+        axios.get(
+            validateOTPEndpoint + queryParams, 
+            {
+                headers: {
+                    "Accept" : "text/plain", 
+                    "AppId" : DOJAH_APP_ID, 
+                    "Authorization" : DOJAH_API_PRIVATE_KEY
+                }
+            })
+            .then(res => processValidateOPTResponse(res, optRefId))
+            .catch(err => res.status(400).send("Invalid opt"))
+            .then(isValid => res.send("OPT was " + String(isValid)))
+    })
 
     async function processValidateOPTResponse(res: AxiosResponse, optRefId: string) {
         console.log(res.data["entity"]["valid"])
@@ -35,32 +68,6 @@ export function validateOPTRoutes(mongodbClient: MongoClient) {
         }
         return isValid
     }
-    
-    // TODO: Make sure user also has right token
-    // Once OPT is validated, the account is created
-    router.post('/validateOPT', (req: Request, res: Response) => {
-        const optRefId = req.body.optRefId
-        const code = req.body.code
-    
-        if (code == undefined || optRefId == undefined) {
-            return res.status(400).send("expecting code and optRefId in body")
-        }
-    
-        // validate OPT
-        const queryParams = `?code=${code}&reference_id=${optRefId}`
-        axios.get(
-            validateOTPEndpoint + queryParams, 
-            {
-                headers: {
-                    "Accept" : "text/plain", 
-                    "AppId" : DOJAH_APP_ID, 
-                    "Authorization" : DOJAH_API_PRIVATE_KEY
-                }
-            })
-            .then(res => processValidateOPTResponse(res, optRefId))
-            .catch(err => res.status(400).send("Invalid opt"))
-            .then(isValid => res.send("OPT was " + String(isValid)))
-    })
 
     return router
 }

@@ -17,6 +17,7 @@ const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const app_1 = require("../app");
+const validateRequestInput_1 = require("../components/validateRequestInput");
 function signupRoutes(mongodbClient) {
     const router = express_1.default.Router();
     const database = mongodbClient.db('accounts');
@@ -25,36 +26,20 @@ function signupRoutes(mongodbClient) {
     const sendOptEndpoint = "https://api.dojah.io/api/v1/messaging/otp";
     // see sms messages sent here: https://www.receivesms.co/us-phone-number/3471/
     const testPhoneNumber = "12099216581";
-    // updates the refId collection to store the phone number and the associated reference id
-    // If this phone number already exists, it updates it instead
-    function processSendOPTResponse(res, phoneNumber, hash) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const optRefId = res.data["entity"][0]["reference_id"];
-            // TODO: handle condition where document with phone number already exists (race condition with more than 1 people registering the same phone number)
-            // store the account, refId, password and salt
-            const doc = {
-                "phoneNumber": phoneNumber,
-                "optRefId": optRefId,
-                "password": hash,
-                "createdAt": new Date()
-            };
-            const result = yield refIds.insertOne(doc);
-            console.log(`A document was inserted into refIds with the _id: ${result.insertedId} and optRefId: ${optRefId}`);
-            return optRefId;
-        });
-    }
     router.post('/signup', (req, res) => __awaiter(this, void 0, void 0, function* () {
         const plaintextPassword = req.body.password;
         const phoneNumber = req.body.phoneNumber;
-        if (plaintextPassword == undefined || phoneNumber == undefined) {
-            return res.status(400).send("expecting password and phoneNumber in body");
+        const expectedParameters = [["phoneNumber", phoneNumber], ["password", plaintextPassword]];
+        const error = (0, validateRequestInput_1.validateRequestInput)(res, expectedParameters);
+        if (error) {
+            return error.send();
         }
-        // validate phone number, make sure it doesn't already exist, is valid format
+        // TODO: validate phone number is valid format
         // make sure phone number doesn't already exist in database
         const query = { "phoneNumber": phoneNumber };
         const user = yield users.findOne(query);
         if (user) {
-            return res.status(400).send("Account exists for phone number");
+            return res.status(200).send("Account exists for phone number");
         }
         // TODO: validate password
         // create salt and hash
@@ -81,14 +66,32 @@ function signupRoutes(mongodbClient) {
                 const status = optRes.data["entity"][0]["status"];
                 const message = optRes.data["entity"][0]["message"];
                 if (status === 400) {
-                    return res.status(400).send("unable to create OPT: " + message);
+                    return res.status(500).json("unable to create OPT: " + message);
                 }
                 processSendOPTResponse(optRes, phoneNumber, hash);
             })
                 .catch(err => console.log(err))
-                .then(optRefId => res.send(optRefId));
+                .then(optRefId => res.status(200).json({ "optRefId": optRefId }));
         });
     }));
+    // updates the refId collection to store the phone number and the associated reference id
+    // If this phone number already exists, it updates it instead
+    function processSendOPTResponse(res, phoneNumber, hash) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const optRefId = res.data["entity"][0]["reference_id"];
+            // TODO: handle condition where document with phone number already exists (race condition with more than 1 people registering the same phone number)
+            // store the account, refId, password and salt
+            const doc = {
+                "phoneNumber": phoneNumber,
+                "optRefId": optRefId,
+                "password": hash,
+                "createdAt": new Date()
+            };
+            const result = yield refIds.insertOne(doc);
+            console.log(`A document was inserted into refIds with the _id: ${result.insertedId} and optRefId: ${optRefId}`);
+            return optRefId;
+        });
+    }
     return router;
 }
 exports.signupRoutes = signupRoutes;
