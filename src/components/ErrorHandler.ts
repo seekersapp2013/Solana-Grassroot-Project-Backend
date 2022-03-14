@@ -23,16 +23,20 @@ export class ErrorHandler {
     this.details = details;
   }
 
-  setErrorCode(code: number): void {
+  public setErrorCode(code: number): void {
     this.code = code;
   }
 
-  setMessage(message: string): void {
+  public setMessage(message: string): void {
     this.message = message;
   }
 
-  addInputError(parameter: string, message: string): void {
+  public addInputError(parameter: string, message: string): void {
     this.details.push({ parameter, message });
+  }
+
+  public getInputErrorsLength(): number {
+    return this.details.length
   }
 
   get data(): object {
@@ -48,7 +52,7 @@ export class ErrorHandler {
     return this.code;
   }
 
-  send() {
+  public send() {
     return this.res.status(this.errorCode).send(this.data);
   }
 }

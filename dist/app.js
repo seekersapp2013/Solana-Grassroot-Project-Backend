@@ -35,7 +35,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DOJAH_APP_ID = exports.DOJAH_API_PRIVATE_KEY = void 0;
+exports.MONGODB_ENDPOINT = exports.DOJAH_APP_ID = exports.DOJAH_API_PRIVATE_KEY = void 0;
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
 const mongodb_1 = require("mongodb");
@@ -47,9 +47,6 @@ const axios_1 = __importDefault(require("axios"));
 const AxiosLogger = __importStar(require("axios-logger"));
 const port = process.env.PORT || 5000;
 const app = (0, express_1.default)();
-const mongodbPort = "27017";
-const mongodbEndpoint = `mongodb://localhost:${mongodbPort}`;
-const mongoClient = new mongodb_1.MongoClient(mongodbEndpoint);
 axios_1.default.interceptors.request.use(AxiosLogger.requestLogger);
 axios_1.default.interceptors.response.use(AxiosLogger.responseLogger);
 function loadEnvVariables() {
@@ -61,13 +58,22 @@ function loadEnvVariables() {
         console.log("missing dojah app id");
         (0, process_1.exit)();
     }
+    if (!process.env.MONGODB_ENDPOINT) {
+        console.log("missing mongodb_endpoint");
+        (0, process_1.exit)();
+    }
+    exports.MONGODB_ENDPOINT = String(process.env.MONGODB_ENDPOINT);
     exports.DOJAH_API_PRIVATE_KEY = String(process.env.DOJAH_API_PRIVATE_KEY);
     exports.DOJAH_APP_ID = String(process.env.DOJAH_APP_ID);
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield mongoClient.connect();
-        console.log(`connected to mongodb: ${mongodbEndpoint}`);
+        const mongoClient = new mongodb_1.MongoClient(exports.MONGODB_ENDPOINT);
+        yield mongoClient.connect().catch(err => {
+            console.log(err);
+            (0, process_1.exit)();
+        });
+        console.log(`connected to mongodb: ${exports.MONGODB_ENDPOINT}`);
         // parse requests json payloads
         app.use(express_1.default.json());
         // add routes
