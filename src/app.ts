@@ -11,12 +11,14 @@ import { exit } from 'process';
 
 import axios from 'axios';
 import * as AxiosLogger from 'axios-logger';
+import { createProfileRoutes } from './routes/createProfile';
 
 const port = process.env.PORT || 5000;
 const app = express();
 
 const mongodbPort = "27017"
-const mongodbEndpoint = `mongodb://localhost:${mongodbPort}`
+const mongodbEndpoint = `mongodb://localhost:${mongodbPort}`;
+// const mongodbEndpoint = process.env.MONGODB || "mongodb://localhost:27017";
 const mongoClient = new MongoClient(mongodbEndpoint);
 
 export var DOJAH_API_PRIVATE_KEY: string;
@@ -45,6 +47,7 @@ async function run() {
     // parse requests json payloads
     app.use(express.json())
     // add routes
+    app.use(createProfileRoutes(mongoClient))
     app.use(signupRoutes(mongoClient))
     app.use(validateOPTRoutes(mongoClient))
     app.use(loginRoutes(mongoClient))

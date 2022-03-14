@@ -9,11 +9,11 @@ export function validatePasswordResetOTPRoutes(mongodbClient: MongoClient) {
 
     const database: Db = mongodbClient.db('accounts');
     const refIds: Collection = database.collection('refId');
-    // const users: Collection = database.collection('user');
+    const users: Collection = database.collection('user');
 
     const validateOTPEndpoint: string = "https://api.dojah.io/api/v1/messaging/otp/validate";
 
-    async function processValidateOPTResponse(res: AxiosResponse, optRefId: string) {
+    async function processValidateOTPResponse(res: AxiosResponse, optRefId: string) {
         console.log(res.data["entity"]["valid"])
         const isValid = res.data["entity"]["valid"]
         if (isValid) {
