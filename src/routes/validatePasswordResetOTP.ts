@@ -58,7 +58,7 @@ export function validatePasswordResetOTPRoutes(mongodbClient: MongoClient) {
                     "Authorization" : DOJAH_API_PRIVATE_KEY
                 }
             })
-            .then(res => processValidateOPTResponse(res, optRefId))
+            .then(res => processValidateOTPResponse(res, optRefId))
             .catch(err => res.status(400).send("Invalid opt"))
             .then(isValid => res.send("OPT was " + String(isValid)))
     })

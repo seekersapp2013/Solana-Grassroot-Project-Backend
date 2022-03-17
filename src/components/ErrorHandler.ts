@@ -44,7 +44,7 @@ export class ErrorHandler {
       status: false,
       error: true,
       message: this.message,
-      details: this.details ? this.details : null,
+      data: this.details ? this.details : null,
     };
   }
 
