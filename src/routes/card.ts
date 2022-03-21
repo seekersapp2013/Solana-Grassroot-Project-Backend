@@ -9,26 +9,66 @@ import { SolanaPay, SolanaPayInit } from "../components/SolanaPay";
 import BigNumber from "bignumber.js";
 import SolanaPayRecord from "../components/SolanaPayRecord";
 import ProfileHandler from "../components/ProfileHandler";
+import { CardHandler } from "../components/CardHandler";
 import { unAuthedError } from "../constants";
+import axios from "axios";
 
-export function walletRoutes(mongodbClient: MongoClient) {
+export function cardRoutes(mongodbClient: MongoClient) {
   const router = express.Router();
   const database: Db = mongodbClient.db("accounts");
-  const wallets: Collection = database.collection("wallets");
+  const cards: Collection = database.collection("cards");
 
-  router.get("/wallet", (req: Request, res: Response) => {
+  router.get("/cards/test", (req: Request, res: Response) => {
+    axios
+      .get("https://sandbox.wallets.africa/cards/Idtypes", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.WALLETS_AFRICA_PUBLIC_KEY}`,
+        },
+      })
+      .then((result) => {
+        console.log(result);
+        new ResponseHandler(res, true, "Successfully", result.data).send();
+      });
+  });
+
+  router.post("/cards/new", (req: Request, res: Response) => {
+    const publicAddress = req.headers.authorization || "";
+
+    new ProfileHandler(mongodbClient, publicAddress)
+      .validatePublicAddress()
+      .then(async (result) => {
+        if (result) {
+          const details = req.body;
+
+          const cards = new CardHandler(mongodbClient, publicAddress);
+          const card = await cards.create(details);
+
+          if (card) {
+            new ResponseHandler(
+              res,
+              true,
+              "Card created successfully",
+              card
+            ).send();
+          } else {
+            new ErrorHandler(res, 500, "Card could not be created").send();
+          }
+        } else {
+          unAuthedError(res);
+        }
+      });
+  });
+
+  router.get("/cards", (req: Request, res: Response) => {
     const publicAddress = req.headers.authorization;
     if (publicAddress) {
-      const wallet = new WalletHandler(mongodbClient, publicAddress);
-      wallet.getWallet().then((result) => {
+      const card = new CardHandler(mongodbClient, publicAddress);
+      card.getCards().then((result) => {
         if (result) {
           new ResponseHandler(res, true, "Query successful", result).send();
         } else {
-          new ErrorHandler(
-            res,
-            500,
-            "Could not get wallet information."
-          ).send();
+          new ErrorHandler(res, 500, "Could not get cards.").send();
         }
       });
     } else {
@@ -36,17 +76,17 @@ export function walletRoutes(mongodbClient: MongoClient) {
     }
   });
 
-  //   router.get("/wallet/balance", (req: Request, res: Response) => {
+  //   router.get("/cards/balance", (req: Request, res: Response) => {
   //     const publicAddress = req.headers.authorization;
   //     if (publicAddress) {
-  //       const wallet = new WalletHandler(mongodbClient, publicAddress);
-  //       wallet.getBalance();
+  //       const card = new CardHandler(mongodbClient, publicAddress);
+  //       card.getBalance();
   //     } else {
   //       new ErrorHandler(res, 401, "You are not authenticated").send();
   //     }
   //   });
 
-  router.post("/wallet/fund", (req: Request, res: Response) => {
+  router.post("/cards/fund", (req: Request, res: Response) => {
     const publicAddress = req.headers.authorization || "";
 
     new ProfileHandler(mongodbClient, publicAddress)
@@ -87,7 +127,7 @@ export function walletRoutes(mongodbClient: MongoClient) {
       });
   });
 
-  router.get("/wallet/fund/status", (req: Request, res: Response) => {
+  router.get("/cards/fund/status", (req: Request, res: Response) => {
     const publicAddress = req.headers.authorization || "";
     new ProfileHandler(mongodbClient, publicAddress)
       .validatePublicAddress()
@@ -108,8 +148,8 @@ export function walletRoutes(mongodbClient: MongoClient) {
               if (data?.status) {
                 records.updateStatus(id, "successful");
 
-                const wallet = new WalletHandler(mongodbClient, publicAddress);
-                await wallet.fundWallet(record.details.amount);
+                const card = new CardHandler(mongodbClient, publicAddress);
+                await card.fundCard(record.details.amount);
 
                 new ResponseHandler(
                   res,
@@ -140,13 +180,13 @@ export function walletRoutes(mongodbClient: MongoClient) {
       });
   });
 
-  router.get("/wallet/fund", (req: Request, res: Response) => {
+  router.get("/cards/fund", (req: Request, res: Response) => {
     const publicAddress = req.headers.authorization || "";
 
     const amount = parseFloat(req.query.amount?.toString() || "1");
 
-    const wallet = new WalletHandler(mongodbClient, publicAddress);
-    wallet.fundWallet(new BigNumber(amount)).then((result) => {
+    const card = new CardHandler(mongodbClient, publicAddress);
+    card.fundCard(new BigNumber(amount)).then((result) => {
       if (result) {
         new ResponseHandler(res, true, "Done!", {}).send();
       } else {

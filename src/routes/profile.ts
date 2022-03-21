@@ -7,16 +7,10 @@ import { ErrorHandler } from "../components/ErrorHandler";
 import { ResponseHandler } from "../components/ResponseHandler";
 import ProfileHandler from "../components/ProfileHandler";
 import { WalletHandler } from "../components/WalletHandler";
+import { unAuthedError } from "../constants";
 
 export function profileRoutes(mongodbClient: MongoClient) {
   const router = express.Router();
-
-  const unAuthedError = (res: Response) =>
-    new ErrorHandler(
-      res,
-      401,
-      "The public address provided could not be validated."
-    ).send();
 
   router.options("/profile", (req: Request, res: Response) => {
     // res.append("Access-Control-Allow-Origin", ["*"]);

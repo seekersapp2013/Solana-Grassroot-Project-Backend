@@ -13,6 +13,7 @@ import axios from "axios";
 import * as AxiosLogger from "axios-logger";
 import { profileRoutes } from "./routes/profile";
 import { walletRoutes } from "./routes/wallet";
+import { cardRoutes } from "./routes/card";
 
 const port = process.env.PORT || 5000;
 const app = express();
@@ -72,8 +73,9 @@ async function run() {
   // parse requests json payloads
   app.use(express.json());
   // add routes
-  app.use(walletRoutes(mongoClient));
   app.use(profileRoutes(mongoClient));
+  app.use(walletRoutes(mongoClient));
+  app.use(cardRoutes(mongoClient));
   app.use(signupRoutes(mongoClient));
   app.use(validateOPTRoutes(mongoClient));
   app.use(loginRoutes(mongoClient));
